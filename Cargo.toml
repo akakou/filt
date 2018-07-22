@@ -5,6 +5,8 @@ authors = ["akakou <s16003@tokyo.kosen-ac.jp>"]
 
 [dependencies]
 router = "*"
+config = "0.9"
+hyper-native-tls = "0.2.4"
 
 [dependencies.iron]
 version = "*"

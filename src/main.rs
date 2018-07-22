@@ -1,10 +1,18 @@
 extern crate iron;
 extern crate router;
 extern crate bodyparser;
+extern crate hyper_native_tls;
+extern crate config;
+
+
+use std::collections::HashMap;
+use std::string::String;
 
 use iron::prelude::*;
 use iron::status;
 use router::Router;
+
+use hyper_native_tls::NativeTlsServer;
 
 
 /// If the server get requests, 
@@ -28,10 +36,22 @@ fn serv(req: &mut Request) -> IronResult<Response> {
 /// Set up server and
 /// start `git pull` loop
 fn main() {
-    println!("On 3000");
+    // get config
+    let mut settings = config::Config::default();
+    settings
+        .merge(config::File::with_name("Settings")).unwrap();
+
+    let setting_data = settings.deserialize::<HashMap<String, String>>().unwrap();
+    let p12_directory = setting_data.get("p12_directory").unwrap();
+    let password = setting_data.get("password").unwrap();
+    let address = setting_data.get("address").unwrap();
+
+    // get ssl certification
+    let ssl = NativeTlsServer::new(p12_directory, password).unwrap();
+    println!("On {}", address);
 
     // set up server
     let mut router = Router::new();
     router.post("/", serv, "serv");
-    Iron::new(router).http("localhost:3000").unwrap();
+    Iron::new(router).https(address, ssl).unwrap();
 }
