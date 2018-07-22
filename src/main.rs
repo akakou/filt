@@ -42,12 +42,12 @@ fn main() {
         .merge(config::File::with_name("Settings")).unwrap();
 
     let setting_data = settings.deserialize::<HashMap<String, String>>().unwrap();
-    let p12_directory = setting_data.get("p12_directory").unwrap();
+    let certificate = setting_data.get("certificate").unwrap();
     let password = setting_data.get("password").unwrap();
     let address = setting_data.get("address").unwrap();
 
     // get ssl certification
-    let ssl = NativeTlsServer::new(p12_directory, password).unwrap();
+    let ssl = NativeTlsServer::new(certificate, password).unwrap();
     println!("On {}", address);
 
     // set up server
