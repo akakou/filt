@@ -41,7 +41,7 @@ fn main() {
     settings
         .merge(config::File::with_name("Settings")).unwrap();
 
-    let setting_data = settings.deserialize::<HashMap<String, String>>().unwrap();
+    let setting_data = settings.try_into::<HashMap<String, String>>().unwrap();
     let certificate = setting_data.get("certificate").unwrap();
     let password = setting_data.get("password").unwrap();
     let address = setting_data.get("address").unwrap();
