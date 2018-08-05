@@ -14,6 +14,8 @@ use router::Router;
 
 use hyper_native_tls::NativeTlsServer;
 
+mod scan;
+
 
 /// If the server get requests, 
 /// call this function and start checking data.
@@ -36,6 +38,9 @@ fn serv(req: &mut Request) -> IronResult<Response> {
 /// Set up server and
 /// start `git pull` loop
 fn main() {
+    // scan
+    scan::scan();
+
     /* get config */
     // read config file
     let mut settings = config::Config::default();
