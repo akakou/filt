@@ -36,22 +36,81 @@ fn serv(req: &mut Request) -> IronResult<Response> {
 /// Set up server and
 /// start `git pull` loop
 fn main() {
-    // get config
+    /* get config */
+    // read config file
     let mut settings = config::Config::default();
-    settings
-        .merge(config::File::with_name("Settings")).unwrap();
+    match settings.merge(config::File::with_name("Settings")) {
+        Ok(_) => {},
+        Err(_err) => {
+            println!("[Err] Setting File Error\n\
+                Please check Settings.toml exists.\n\n\
+                {}", _err);
+            return;
+        }
+    }
 
-    let setting_data = settings.try_into::<HashMap<String, String>>().unwrap();
-    let certificate = setting_data.get("certificate").unwrap();
-    let password = setting_data.get("password").unwrap();
-    let address = setting_data.get("address").unwrap();
+    // convert to hashmap
+    let setting_data = match settings.try_into::<HashMap<String, String>>() {
+        Ok(_setting) => _setting,
+        Err(_err) => {
+            println!("[Err] Setting Data Error\n\
+                Please check Setting.toml correct.\n\n\
+                {}", _err);
+            return;
+        }
+    };
 
-    // get ssl certification
-    let ssl = NativeTlsServer::new(certificate, password).unwrap();
+    // take out certificate
+    let certificate = match setting_data.get("certificate") {
+        Some(_cert) => _cert,
+        None => {
+            println!("[Err] Certificate Option Error\n\
+                Please check Setting.toml has the PATH of certificate file.");
+            return;
+        }
+    };
+
+    // take out password
+    let password = match setting_data.get("password") {
+        Some(_pass) => _pass,
+        None => {
+            println!("[Err] Password Option Error\n\
+                Please check Setting.toml has the password.");
+            return;
+        }
+    };
+
+    // take out password
+    let address = match setting_data.get("address") {
+        Some(_address) => _address,
+        None => {
+            println!("[Err] Address Option Error\n\
+                Please check Setting.toml has the address of server.");
+            return;
+        }
+    };
+
+    /* get ssl certification */
+    let ssl = match NativeTlsServer::new(certificate, password) {
+        Ok(_ssl) => _ssl,
+        Err(_err) => {
+            println!("[Unexpected Err] Unexpected SSL Error\n\
+                Language Error:{}\n\
+                (Maybe... : Is the identity file exists ?)", _err);
+            return;
+        }
+    };
+    
+    /* run server */
     println!("On {}", address);
-
-    // set up server
+    
     let mut router = Router::new();
     router.post("/", serv, "serv");
-    Iron::new(router).https(address, ssl).unwrap();
+    match Iron::new(router).https(address, ssl) {
+        Ok(_) => {},
+        Err(_err) => {
+            println!("[Unexpected Err] Unexpected Server Error\n\
+                {}", _err)
+        }
+    };
 }
