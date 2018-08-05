@@ -1,0 +1,3 @@
+certificate = "config/identity.p12"
+password = "mypass"
+address = "localhost:3000"
