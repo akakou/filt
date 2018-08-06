@@ -40,11 +40,11 @@ fn serv(req: &mut Request) -> IronResult<Response> {
 fn main() {
     // scan
     scan::scan();
-
+    
     /* get config */
     // read config file
     let mut settings = config::Config::default();
-    match settings.merge(config::File::with_name("Settings")) {
+    match settings.merge(config::File::with_name("conf/Server")) {
         Ok(_) => {},
         Err(_err) => {
             println!("[Err] Setting File Error\n\
