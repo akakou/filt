@@ -40,7 +40,7 @@ fn serv(req: &mut Request) -> IronResult<Response> {
 fn main() {
     // scan
     scan::scan();
-    
+
     /* get config */
     // read config file
     let mut settings = config::Config::default();
@@ -48,7 +48,7 @@ fn main() {
         Ok(_) => {},
         Err(_err) => {
             println!("[Err] Setting File Error\n\
-                Please check Settings.toml exists.\n\n\
+                Please check conf/Server.toml exists.\n\n\
                 {}", _err);
             return;
         }
@@ -59,7 +59,7 @@ fn main() {
         Ok(_setting) => _setting,
         Err(_err) => {
             println!("[Err] Setting Data Error\n\
-                Please check Setting.toml correct.\n\n\
+                Please check conf/Server.toml correct.\n\n\
                 {}", _err);
             return;
         }
@@ -70,7 +70,7 @@ fn main() {
         Some(_cert) => _cert,
         None => {
             println!("[Err] Certificate Option Error\n\
-                Please check Setting.toml has the PATH of certificate file.");
+                Please check conf/Server.toml has the PATH of certificate file.");
             return;
         }
     };
@@ -80,7 +80,7 @@ fn main() {
         Some(_pass) => _pass,
         None => {
             println!("[Err] Password Option Error\n\
-                Please check Setting.toml has the password.");
+                Please check conf/Server.toml has the password.");
             return;
         }
     };
@@ -90,7 +90,7 @@ fn main() {
         Some(_address) => _address,
         None => {
             println!("[Err] Address Option Error\n\
-                Please check Setting.toml has the address of server.");
+                Please check conf/Server.toml has the address of server.");
             return;
         }
     };

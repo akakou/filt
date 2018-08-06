@@ -2,6 +2,8 @@ use std::vec::Vec;
 use std::fs;
 use std::path::PathBuf;
 
+extern crate config;
+
 
 /// Search files which named `file_names` 
 /// under `directory_path`.
@@ -35,7 +37,32 @@ fn search_files(files_paths: &mut Vec<PathBuf>, directory_path: PathBuf) {
 /// Using signatures and scanner to scan target.
 pub fn scan() {
     /* get scanner */
-    // TODO
+    let mut settings = config::Config::default();
+    match settings.merge(config::File::with_name("conf/Scanner")) {
+        Ok(_) => {},
+        Err(_err) => {
+            println!("[Err] Setting File Error\n\
+                Please check conf/Scanner.toml exists.\n\n\
+                {}", _err);
+            return;
+        }
+    }
+
+    let scanners_names = match settings.get_array("scanners") {
+        Ok(_scanners) => _scanners,
+        Err(_err) => {
+            println!("[Err] Setting File Error\n\
+                Please check conf/Server.toml has `scanners` array.\n\n\
+                {}", _err);
+            return;
+        }
+    };
+
+    // print signatures
+    println!("[Scanner Name]");
+    for scanner_name in scanners_names {
+        println!("Name: {}", scanner_name);
+    }
 
     /* get signature list */
     // set arguments
