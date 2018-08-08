@@ -14,6 +14,7 @@ use router::Router;
 
 use hyper_native_tls::NativeTlsServer;
 
+mod scanner;
 mod scan;
 
 
