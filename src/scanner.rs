@@ -3,9 +3,9 @@ extern crate base64;
 
 use std::time;
 use std::thread;
-use std::process::{Command, Child};
-use std::io::Write;
-use std::io::Read;
+use std::process::{Command, Child, Stdio};
+use std::io::{Read, Write};
+use config::Config;
 
 
 pub struct Scanner {
@@ -18,6 +18,23 @@ pub struct Scanner {
 
 
 impl Scanner {
+    /// Build new scanner
+    pub fn new(name: String, config:Config, path:String, executable:String) -> Scanner{
+        let mut process = Command::new(executable);
+        let pipe = process
+                    .stdin(Stdio::piped())
+                    .stdout(Stdio::piped())
+                    .spawn().unwrap();
+        
+        Scanner {
+            name: name,
+            path: path,
+            config: config,
+            process: process,
+            pipe: pipe
+        }
+    }
+
     /// Send message to stdin of process
     fn send(&mut self, message : &[u8]) {
         // encode to string
