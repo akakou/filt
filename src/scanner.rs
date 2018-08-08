@@ -131,3 +131,18 @@ impl Scanner {
         }
     }
 }
+
+
+impl Drop for Scanner {
+    /// when scope out, kill process
+    fn drop(&mut self) {
+        match self.pipe.kill() {
+            Ok(_) => {},
+            Err(_err) => {
+                println!("[Unexpected Err] Drop Scanner Error\n\
+                    Please check is scanner procces correct.\n\n\
+                    {}", _err);
+            }
+        }
+    }
+}
