@@ -5,7 +5,6 @@ use std::vec::Vec;
 use std::fs;
 use std::env;
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
 
 use scanner::Scanner;
 
@@ -111,22 +110,14 @@ pub fn scan() {
             }
         };
 
-        // make process and pipe
-        let mut process = Command::new(executable_path);
-        let mut pipe = process
-                    .stdin(Stdio::piped())
-                    .stdout(Stdio::piped())
-                    .spawn().unwrap();
-        
         // make scanner
         scanners.push(
-            Scanner {
-                name: scanner_name,
-                path: scanner_path,
-                config: scanner_config,
-                process: process,
-                pipe: pipe
-            }
+            Scanner::new(
+                scanner_name,
+                scanner_config,      
+                scanner_path,
+                executable_path
+            )
         );
 
         // for debug

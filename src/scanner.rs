@@ -3,9 +3,9 @@ extern crate base64;
 
 use std::time;
 use std::thread;
-use std::process::{Command, Child};
-use std::io::Write;
-use std::io::Read;
+use std::process::{Command, Child, Stdio};
+use std::io::{Read, Write};
+use config::Config;
 
 
 pub struct Scanner {
@@ -18,6 +18,23 @@ pub struct Scanner {
 
 
 impl Scanner {
+    /// Build new scanner
+    pub fn new(name: String, config:Config, path:String, executable:String) -> Scanner{
+        let mut process = Command::new(executable);
+        let pipe = process
+                    .stdin(Stdio::piped())
+                    .stdout(Stdio::piped())
+                    .spawn().unwrap();
+        
+        Scanner {
+            name: name,
+            path: path,
+            config: config,
+            process: process,
+            pipe: pipe
+        }
+    }
+
     /// Send message to stdin of process
     fn send(&mut self, message : &[u8]) {
         // encode to string
@@ -42,7 +59,7 @@ impl Scanner {
             },
             Err(_err) => {
                 return Err(
-                    "[Err] Encode String Error\n\
+                    "[Unexpected Err] Encode String Error\n\
                     Please check scanner's output correct.\n\n".to_string()
                 );
             }
@@ -71,7 +88,7 @@ impl Scanner {
                 Ok(_buffer) => _buffer,
                 Err(_err) => {
                     return Err(
-                        "[Err] Encode String Error\n\
+                        "[Unexpected Err] Encode String Error\n\
                         Please check scanner's output correct.\n\n".to_string()                    )
                 }
             };
@@ -98,7 +115,7 @@ impl Scanner {
                         },
                         Err(_err) => {
                             return Err(
-                                "[Err] Decode Base64 Error\n\
+                                "[Unexpected Err] Decode Base64 Error\n\
                                 Please check scanner's output correct.\n\n".to_string()
                             );
                         }
@@ -106,11 +123,26 @@ impl Scanner {
                 },
                 Err(_err) => {
                     return Err(
-                        "[Err] Decode Base64 Error\n\
+                        "[Unexpected Err] Decode Base64 Error\n\
                         Please check scanner's output correct.\n\n".to_string()
                     );
                 }
             };
+        }
+    }
+}
+
+
+impl Drop for Scanner {
+    /// when scope out, kill process
+    fn drop(&mut self) {
+        match self.pipe.kill() {
+            Ok(_) => {},
+            Err(_err) => {
+                println!("[Unexpected Err] Drop Scanner Error\n\
+                    Please check is scanner procces correct.\n\n\
+                    {}", _err);
+            }
         }
     }
 }
