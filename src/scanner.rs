@@ -30,7 +30,7 @@ impl Scanner {
         stdin.write_all(&base64_message.as_bytes()).unwrap();
     }
 
-    /// recieve message from stdout of process
+    /// Receive message from stdout of process
     fn recv(&mut self) -> Result<Vec<u8>, String> {
         // ready buffer space
         let mut buffer = [0; 1024];
@@ -49,7 +49,7 @@ impl Scanner {
         };
     }
 
-    /// send request
+    /// Send request
     pub fn request(&mut self, message : &[u8]) -> Result<String, String> {
         // send message
         self.send(message);
@@ -58,7 +58,7 @@ impl Scanner {
         let mut response = String::from("");
 
         loop {
-            // recieve message
+            // receive message
             let buffer : Vec<u8> = match self.recv() {
                 Ok(_buffer) => _buffer,
                 Err(_err) => {
@@ -77,7 +77,7 @@ impl Scanner {
             };
 
             // if not contain '\n',
-            // add buffer to more recieved
+            // add buffer to more received
             if !buffer.contains('\n') {
                 response += &buffer;
                 let sleep_time = time::Duration::from_millis(10);
