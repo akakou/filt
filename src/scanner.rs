@@ -59,7 +59,7 @@ impl Scanner {
             },
             Err(_err) => {
                 return Err(
-                    "[Err] Encode String Error\n\
+                    "[Unexpected Err] Encode String Error\n\
                     Please check scanner's output correct.\n\n".to_string()
                 );
             }
@@ -88,7 +88,7 @@ impl Scanner {
                 Ok(_buffer) => _buffer,
                 Err(_err) => {
                     return Err(
-                        "[Err] Encode String Error\n\
+                        "[Unexpected Err] Encode String Error\n\
                         Please check scanner's output correct.\n\n".to_string()                    )
                 }
             };
@@ -115,7 +115,7 @@ impl Scanner {
                         },
                         Err(_err) => {
                             return Err(
-                                "[Err] Decode Base64 Error\n\
+                                "[Unexpected Err] Decode Base64 Error\n\
                                 Please check scanner's output correct.\n\n".to_string()
                             );
                         }
@@ -123,7 +123,7 @@ impl Scanner {
                 },
                 Err(_err) => {
                     return Err(
-                        "[Err] Decode Base64 Error\n\
+                        "[Unexpected Err] Decode Base64 Error\n\
                         Please check scanner's output correct.\n\n".to_string()
                     );
                 }
