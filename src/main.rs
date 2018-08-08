@@ -5,9 +5,6 @@ extern crate hyper_native_tls;
 extern crate config;
 
 
-use std::collections::HashMap;
-use std::string::String;
-
 use iron::prelude::*;
 use iron::status;
 use router::Router;
@@ -55,21 +52,10 @@ fn main() {
         }
     }
 
-    // convert to hashmap
-    let setting_data = match settings.try_into::<HashMap<String, String>>() {
-        Ok(_setting) => _setting,
-        Err(_err) => {
-            println!("[Err] Setting Data Error\n\
-                Please check conf/Server.toml correct.\n\n\
-                {}", _err);
-            return;
-        }
-    };
-
     // take out certificate
-    let certificate = match setting_data.get("certificate") {
-        Some(_cert) => _cert,
-        None => {
+    let certificate = match settings.get_str("certificate") {
+        Ok(_cert) => _cert,
+        Err(_err) => {
             println!("[Err] Certificate Option Error\n\
                 Please check conf/Server.toml has the PATH of certificate file.");
             return;
@@ -77,9 +63,9 @@ fn main() {
     };
 
     // take out password
-    let password = match setting_data.get("password") {
-        Some(_pass) => _pass,
-        None => {
+    let password = match settings.get_str("password") {
+        Ok(_pass) => _pass,
+        Err(_err) => {
             println!("[Err] Password Option Error\n\
                 Please check conf/Server.toml has the password.");
             return;
@@ -87,9 +73,9 @@ fn main() {
     };
 
     // take out password
-    let address = match setting_data.get("address") {
-        Some(_address) => _address,
-        None => {
+    let address = match settings.get_str("address") {
+        Ok(_address) => _address,
+        Err(_err) => {
             println!("[Err] Address Option Error\n\
                 Please check conf/Server.toml has the address of server.");
             return;
@@ -97,7 +83,7 @@ fn main() {
     };
 
     /* get ssl certification */
-    let ssl = match NativeTlsServer::new(certificate, password) {
+    let ssl = match NativeTlsServer::new(certificate, &password) {
         Ok(_ssl) => _ssl,
         Err(_err) => {
             println!("[Unexpected Err] Unexpected SSL Error\n\
