@@ -1,28 +1,121 @@
+extern crate base64;
+extern crate config;
+
 use std::vec::Vec;
 use std::fs;
 use std::env;
+use std::time;
+use std::thread;
 use std::path::PathBuf;
-use std::process::Command;
-
-extern crate config;
+use std::process::{Command, Stdio, Child};
+use std::io::Write;
+use std::io::Read;
 
 
 struct Scanner {
     name: String,
     path: String,
     config: config::Config,
-    process: Command
+    process: Command,
+    pipe: Child
 }
 
+
 impl Scanner {
-    fn info_string(&mut self) -> String {
-        let output =  &self.process.output().unwrap().stdout;
+    /// Send message to stdin of process
+    fn send(&mut self, message : &[u8]) {
+        // encode to string
+        let string_message: String = String::from_utf8(message.to_vec()).unwrap();
 
-        let res = output.iter().map(|&s| s as char).collect::<String>();
-        let output: String = String::from_utf8(output.to_vec()).unwrap();
+        // encode to base64
+        let base64_message = base64::encode(&string_message.to_string()) + "\n";
 
-        return "name: ".to_string() + &self.name + "\n"
-            + "output: " + &output.to_string();
+        let stdin = self.pipe.stdin.as_mut().unwrap();
+        stdin.write_all(&base64_message.as_bytes()).unwrap();
+    }
+
+    /// recieve message from stdout of process
+    fn recv(&mut self) -> Result<Vec<u8>, String> {
+        // ready buffer space
+        let mut buffer = [0; 1024];
+
+        // read 1024 byte
+        match self.pipe.stdout.as_mut().unwrap().read(&mut buffer) {
+            Ok(_) => {
+                return Ok(buffer.to_vec());
+            },
+            Err(_err) => {
+                return Err(
+                    "[Err] Encode String Error\n\
+                    Please check scanner's output correct.\n\n".to_string()
+                );
+            }
+        };
+    }
+
+    /// send request
+    fn request(&mut self, message : &[u8]) -> Result<String, String> {
+        // send message
+        self.send(message);
+
+        // ready response space
+        let mut response = String::from("");
+
+        loop {
+            // recieve message
+            let buffer : Vec<u8> = match self.recv() {
+                Ok(_buffer) => _buffer,
+                Err(_err) => {
+                    return Err(_err);
+                }
+            };
+
+            // encode from u8 vector to string
+            let buffer = match String::from_utf8(buffer) {
+                Ok(_buffer) => _buffer,
+                Err(_err) => {
+                    return Err(
+                        "[Err] Encode String Error\n\
+                        Please check scanner's output correct.\n\n".to_string()                    )
+                }
+            };
+
+            // if not contain '\n',
+            // add buffer to more recieved
+            if !buffer.contains('\n') {
+                response += &buffer;
+                let sleep_time = time::Duration::from_millis(10);
+                thread::sleep(sleep_time);
+                continue;
+            }
+            
+            // split string at '\n'
+            let splited: Vec<&str> = buffer.split('\n').collect();
+            response += splited.get(0).unwrap();
+
+            // decode base64
+            match base64::decode(&response) {
+                Ok(_decode) => {
+                    match String::from_utf8(_decode) {
+                        Ok(_decode) => {
+                            return Ok(_decode);
+                        },
+                        Err(_err) => {
+                            return Err(
+                                "[Err] Decode Base64 Error\n\
+                                Please check scanner's output correct.\n\n".to_string()
+                            );
+                        }
+                    };
+                },
+                Err(_err) => {
+                    return Err(
+                        "[Err] Decode Base64 Error\n\
+                        Please check scanner's output correct.\n\n".to_string()
+                    );
+                }
+            };
+        }
     }
 }
 
@@ -128,19 +221,38 @@ pub fn scan() {
             }
         };
 
+        // make process and pipe
+        let mut process = Command::new(executable_path);
+        let mut pipe = process
+                    .stdin(Stdio::piped())
+                    .stdout(Stdio::piped())
+                    .spawn().unwrap();
+        
         // make scanner
         scanners.push(
             Scanner {
                 name: scanner_name,
                 path: scanner_path,
                 config: scanner_config,
-                process: Command::new(executable_path)
+                process: process,
+                pipe: pipe
             }
         );
 
         // for debug
-        let mut pop = scanners.pop().unwrap();
-        println!("load:{}", pop.info_string())
+        let mut scanner = scanners.pop().unwrap();
+        let test: &str = "hello world";
+        let bytes: &[u8] = test.as_bytes();
+        let response = scanner.request(bytes);
+
+        match response {
+            Ok(_response) => {
+                println!("{}", _response);
+            },
+            Err(_err) => {
+                println!("{}", _err)
+            }
+        }
     }
 
     /* get signature list */
@@ -151,8 +263,10 @@ pub fn scan() {
     search_files(&mut signatures, signature_path);
 
     // print signatures
+    /*
     println!("[Signature Path]");
     for signature in signatures {
         println!("Path: {}", signature.display());
     }
+    */
 }
