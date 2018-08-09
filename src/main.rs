@@ -12,6 +12,7 @@ use router::Router;
 use hyper_native_tls::NativeTlsServer;
 
 mod scanner;
+mod scan_utils;
 mod scan;
 
 
@@ -20,25 +21,57 @@ mod scan;
 fn serv(req: &mut Request) -> IronResult<Response> {
     // get request's parameter
     let param = req.get::<bodyparser::Json>();
-    println!("Parsed body:\n{:?}", param);
 
     // parse parameter to json
-    let result = match param {
-        Ok(Some(_param)) => "ok",
-        Ok(None) => "empty",
-        Err(_err) => "error"
+    let param = match param {
+        Ok(Some(_param)) => _param,
+        Ok(None) => {
+            let result = scan_utils::ScanResult::init(
+                scan_utils::IsHit::Err,
+                "empty".to_string()
+            );
+
+            return Ok(Response::with((status::Ok, result.to_string())));
+        },
+        Err(_err) => {
+            let result = scan_utils::ScanResult::init(
+                scan_utils::IsHit::Err,
+                "incorrect json format".to_string()
+            );
+
+            return Ok(Response::with((status::Ok, result.to_string())));
+        }
+    };
+
+    // make target
+    let target = match scan_utils::ScanTarget::new(param) {
+        Ok(_target) => _target,
+        Err(_) => {
+            let result = scan_utils::ScanResult::init(
+                scan_utils::IsHit::Err,
+                "target not found".to_string()
+            );
+
+            return Ok(Response::with((status::Ok, result.to_string())));
+        }
+    };
+
+    // scan
+    let result = match scan::scan(target) {
+        Ok(_result) => _result,
+        Err(_err) => scan_utils::ScanResult{
+            result: scan_utils::IsHit::Err,
+            message: "unexpected err".to_string()
+        }
     };
 
     // return response
-    Ok(Response::with((status::Ok, result)))
+    Ok(Response::with((status::Ok, result.to_string())))
 }
 
 /// Set up server and
 /// start `git pull` loop
 fn main() {
-    // scan
-    scan::scan();
-
     /* get config */
     // read config file
     let mut settings = config::Config::default();

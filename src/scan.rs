@@ -1,5 +1,6 @@
 extern crate base64;
 extern crate config;
+extern crate serde_json;
 
 use std::vec::Vec;
 use std::fs;
@@ -7,6 +8,7 @@ use std::env;
 use std::path::PathBuf;
 
 use scanner::Scanner;
+use scan_utils::*;
 
 
 /// Search files which named `file_names` 
@@ -39,9 +41,10 @@ fn search_files(files_paths: &mut Vec<PathBuf>, directory_path: PathBuf) {
 }
 
 /// Using signatures and scanner to scan target.
-pub fn scan() {
+pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
     /* Get scanner */
     let mut scanners: Vec<Scanner> = Vec::new();
+    let mut scan_result = ScanResult::new();
 
     // get current directory
     let unwraped_current_path = env::current_dir().unwrap();
@@ -55,7 +58,7 @@ pub fn scan() {
             println!("[Err] Setting File Error\n\
                 Please check conf/Scanner.toml exists.\n\n\
                 {}", _err);
-            return;
+            return Err("unexpected err".to_string());
         }
     }
 
@@ -66,7 +69,7 @@ pub fn scan() {
             println!("[Err] Setting File Error\n\
                 Please check conf/Server.toml has `scanners` array.\n\n\
                 {}", _err);
-            return;
+            return Err("unexpected err".to_string());
         }
     };
 
@@ -123,23 +126,9 @@ pub fn scan() {
         /* for debug */
         // scanner.request()
         let mut scanner = scanners.pop().unwrap();
-        let message = String::from("ZnVnYWZ1Z2E=");
+        let message = target.target.clone();
         
         let response = scanner.request(message);
-        match response {
-            Ok(_response) => {
-                println!("{}", _response);
-            },
-            Err(_err) => {
-                println!("{}", _err)
-            }
-        }
-
-        // scanner.request_by_bytes()
-        let message = "hogehoge";
-        let bytes: &[u8] = message.as_bytes();
-        let response = scanner.request_by_bytes(bytes);
-
         match response {
             Ok(_response) => {
                 println!("{}", _response);
@@ -164,4 +153,10 @@ pub fn scan() {
         println!("Path: {}", signature.display());
     }
     */
+
+    scan_result.message = String::from("hello world !");
+
+    return Ok(
+        scan_result
+    )
 }
