@@ -120,11 +120,25 @@ pub fn scan() {
             )
         );
 
-        // for debug
+        /* for debug */
+        // scanner.request()
         let mut scanner = scanners.pop().unwrap();
-        let test: &str = "hello world";
-        let bytes: &[u8] = test.as_bytes();
-        let response = scanner.request(bytes);
+        let message = String::from("ZnVnYWZ1Z2E=");
+        
+        let response = scanner.request(message);
+        match response {
+            Ok(_response) => {
+                println!("{}", _response);
+            },
+            Err(_err) => {
+                println!("{}", _err)
+            }
+        }
+
+        // scanner.request_by_bytes()
+        let message = "hogehoge";
+        let bytes: &[u8] = message.as_bytes();
+        let response = scanner.request_by_bytes(bytes);
 
         match response {
             Ok(_response) => {

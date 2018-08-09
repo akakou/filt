@@ -36,15 +36,20 @@ impl Scanner {
     }
 
     /// Send message to stdin of process
-    fn send(&mut self, message : &[u8]) {
-        // encode to string
-        let string_message: String = String::from_utf8(message.to_vec()).unwrap();
-
-        // encode to base64
-        let base64_message = base64::encode(&string_message.to_string()) + "\n";
-
+    fn send(&mut self, message : &[u8]) -> Result<(), String>{
         let stdin = self.pipe.stdin.as_mut().unwrap();
-        stdin.write_all(&base64_message.as_bytes()).unwrap();
+
+        match stdin.write_all(message) {
+            Ok(_) => {
+                return Ok(())
+            },
+            Err(_err) => {
+                return Err(
+                    "[Unexpected Err] Send Message Error\n\
+                    Please check scanner's input correct.\n\n".to_string()
+                )
+            }
+        };
     }
 
     /// Receive message from stdout of process
@@ -66,11 +71,8 @@ impl Scanner {
         };
     }
 
-    /// Send request
-    pub fn request(&mut self, message : &[u8]) -> Result<String, String> {
-        // send message
-        self.send(message);
-
+    /// Wait and receive line of string message
+    fn recv_line(&mut self) -> Result<String, String> {
         // ready response space
         let mut response = String::from("");
 
@@ -89,7 +91,8 @@ impl Scanner {
                 Err(_err) => {
                     return Err(
                         "[Unexpected Err] Encode String Error\n\
-                        Please check scanner's output correct.\n\n".to_string()                    )
+                        Please check scanner's output correct.\n\n".to_string()
+                    )
                 }
             };
 
@@ -106,29 +109,61 @@ impl Scanner {
             let splited: Vec<&str> = buffer.split('\n').collect();
             response += splited.get(0).unwrap();
 
-            // decode base64
-            match base64::decode(&response) {
-                Ok(_decode) => {
-                    match String::from_utf8(_decode) {
-                        Ok(_decode) => {
-                            return Ok(_decode);
-                        },
-                        Err(_err) => {
-                            return Err(
-                                "[Unexpected Err] Decode Base64 Error\n\
-                                Please check scanner's output correct.\n\n".to_string()
-                            );
-                        }
-                    };
-                },
-                Err(_err) => {
-                    return Err(
-                        "[Unexpected Err] Decode Base64 Error\n\
-                        Please check scanner's output correct.\n\n".to_string()
-                    );
-                }
-            };
+            return Ok(response);
         }
+    }
+
+    /// Send request (message is base64 string)
+    pub fn request(&mut self, message: String) -> Result<String, String> {
+        let message = message + "\n";
+
+        // send message
+        match self.send(message.as_bytes()) {
+            Ok(_) => {},
+            Err(_err) => {
+                return Err(_err);
+            }
+        }
+
+        // ready response space
+        let response = match self.recv_line(){
+            Ok(_line) => _line,
+            Err(_err) => {
+                return Err(_err);
+            }
+        };
+
+        // decode base64
+        match base64::decode(&response) {
+            Ok(_decode) => {
+                match String::from_utf8(_decode) {
+                    Ok(_decode) => {
+                        return Ok(_decode);
+                    },
+                    Err(_err) => {
+                        return Err(
+                            "[Unexpected Err] Decode Base64 Error\n\
+                            Please check scanner's output correct.\n\n".to_string()
+                        );
+                    }
+                };
+            },
+            Err(_err) => {
+                return Err(
+                    "[Unexpected Err] Decode Base64 Error\n\
+                    Please check scanner's output correct.\n\n".to_string()
+                );
+            }
+        };
+    }
+
+    /// Send request (message is bytes and encode base64 here)
+    pub fn request_by_bytes(&mut self, message: &[u8]) -> Result<String, String> {
+        // encode to base64
+        let string_message: String = String::from_utf8(message.to_vec()).unwrap();
+        let base64_message = base64::encode(&string_message.to_string()) + "\n";
+
+        self.request(base64_message)
     }
 }
 
