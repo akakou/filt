@@ -44,8 +44,8 @@ impl ScanResult {
         let base64_message = base64::encode(&self.message);
         
         let result = format!("{{\
-                'result':'{}',\
-                'message':'{}'\
+                \"result\":\"{}\",\
+                \"message\":\"{}\"\
             }}", is_hit, base64_message);
         
         return result;
