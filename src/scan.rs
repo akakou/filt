@@ -172,6 +172,31 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
                 continue;
             }
         }
+
+        // for removing scanner which failed
+        let mut removes: Vec<usize> = Vec::new();
+        let count = 0;
+        
+        // set signatures
+        for scanner in &mut scanners {
+            // get extensions of config
+            let extensions = match scanner.config.get_array("extensions") {
+                Ok(_extensions) => _extensions,
+                Err(_err) => {
+                    println!("[Unexpected Err] Read Extension Err\n\
+                        Please check the {} extension exits.\n\n\
+                        {}", scanner.name, _err);
+                    removes.push(count);
+                    continue;
+                }
+            };
+        }
+
+        // remove failed scanner
+        for remove in removes {
+            let mut scanner = scanners.remove(remove);
+            scanner.request_end().ok();
+        }
     }
 
     scan_result.messages.push("hello world".to_string());
