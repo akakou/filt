@@ -46,11 +46,12 @@ fn search_files(files_paths: &mut Vec<PathBuf>, directory_path: PathBuf) {
     }
 }
 
-/// Using signatures and scanner to scan target.
-pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
+
+/// Search scanner list,
+/// and return them built.
+fn build_scanners(target: ScanTarget) -> Result<Vec<Scanner>, String> {
     /* Get scanner */
     let mut scanners: Vec<Scanner> = Vec::new();
-    let mut scan_result = ScanResult::new();
 
     // get current directory
     let unwraped_current_path = env::current_dir().unwrap();
@@ -138,6 +139,22 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
 
         scanners.push(scanner);
     }
+
+    return Ok(scanners);
+}
+
+/// Using signatures and scanner to scan target.
+pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
+    let mut scan_result = ScanResult::new();
+
+    // get scanner list
+    let mut scanners = match build_scanners(target) {
+        Ok(_scanner) => _scanner,
+        Err(_err) => {
+            println!("{}", _err);
+            return Err(_err);
+        }
+    };
 
     // get signature list
     let signature_path = PathBuf::from("./signature");
