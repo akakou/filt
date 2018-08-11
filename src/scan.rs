@@ -4,6 +4,7 @@ extern crate serde_json;
 
 use std::vec::Vec;
 use std::fs;
+use std::io::Read;
 use std::env;
 use std::path::PathBuf;
 
@@ -98,9 +99,7 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
         let config_path = scanner_path.to_string() + "/Settings";
         let mut scanner_config = config::Config::new();
         match scanner_config.merge(config::File::with_name(config_path.as_str())) {
-            Ok(_) => {
-                println!("{:?}", scanner_config.get_array("extensions").unwrap());
-            },
+            Ok(_) => {},
             Err(_err) => {
                 println!("[Err] Scanner Config Error\n\
                     Please check {}.toml exists.\n\n\
@@ -140,12 +139,40 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
         scanners.push(scanner);
     }
 
-    /* send signatures */
     // get signature list
     let signature_path = PathBuf::from("./signature");
     let mut signatures: Vec<PathBuf> = Vec::new();
     
     search_files(&mut signatures, signature_path);
+
+    for path in signatures {
+        // get extention
+        let extention = path.extension().unwrap().to_str().unwrap();
+
+        /* Read signature files */
+        // open signature file
+        let mut f = match fs::File::open(path.clone()) {
+            Ok(_f) => _f,
+            Err(_err) => {
+                println!("[Unexpected Err] Open Signature Err\n\
+                    Please check the {} openable.\n\n\
+                    {}", path.clone().display(), _err);
+                continue;
+            }
+        };
+
+        // read signature file
+        let mut signature = Vec::new();
+        match f.read_to_end(&mut signature){
+            Ok(_) => {},
+            Err(_err) => {
+                println!("[Unexpected Err] Read Signature Err\n\
+                    Please check the {} readable.\n\n\
+                    {}", path.display(), _err);
+                continue;
+            }
+        }
+    }
 
     scan_result.messages.push("hello world".to_string());
 
