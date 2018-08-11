@@ -161,9 +161,23 @@ impl Scanner {
     pub fn request_by_bytes(&mut self, message: &[u8]) -> Result<String, String> {
         // encode to base64
         let string_message: String = String::from_utf8(message.to_vec()).unwrap();
-        let base64_message = base64::encode(&string_message.to_string()) + "\n";
+        let base64_message = base64::encode(&string_message.to_string());
 
         self.request(base64_message)
+    }
+
+    /// Send empty line and received result
+    pub fn request_end(&mut self) -> Result<String, String> {
+        let result = self.request("\n".to_string());
+        match self.pipe.kill() {
+            Ok(_) => {},
+            Err(_err) => {
+                println!("[Unexpected Err] Drop Scanner Error\n\
+                    Please check is scanner procces correct.\n\n\
+                    {}", _err);
+            }
+        }
+        return result;
     }
 }
 
