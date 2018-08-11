@@ -190,6 +190,26 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
                     continue;
                 }
             };
+
+            /* Send signatures */
+            // check signature extention in
+            // extentions of scanner config
+            for _extention in extensions {
+                if extention == _extention.into_str().unwrap() {
+                    // if extentions same,
+                    // send signature
+                    match scanner.request_by_bytes(&mut signature) {
+                        Ok(_) => {
+                        },
+                        Err(_err) => {
+                            removes.push(count);
+                            print!("{}", _err);
+                        }
+                    }
+
+                    break;
+                }
+            }
         }
 
         // remove failed scanner
