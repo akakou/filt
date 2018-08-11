@@ -162,7 +162,7 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
     
     search_files(&mut signatures, signature_path);
 
-    for path in signatures {
+    for path in &mut signatures {
         // get extention
         let extention = path.extension().unwrap().to_str().unwrap();
 
@@ -190,9 +190,6 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
             }
         }
 
-        // for removing scanner which failed
-        let mut removes: Vec<usize> = Vec::new();
-        let count = 0;
         
         // set signatures
         for scanner in &mut scanners {
@@ -203,7 +200,7 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
                     println!("[Unexpected Err] Read Extension Err\n\
                         Please check the {} extension exits.\n\n\
                         {}", scanner.name, _err);
-                    removes.push(count);
+                    scanner.kill();
                     continue;
                 }
             };
@@ -219,20 +216,14 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
                         Ok(_) => {
                         },
                         Err(_err) => {
-                            removes.push(count);
                             print!("{}", _err);
+                            scanner.kill();
                         }
                     }
 
                     break;
                 }
             }
-        }
-
-        // remove failed scanner
-        for remove in removes {
-            let mut scanner = scanners.remove(remove);
-            scanner.request_end().ok();
         }
     }
 
