@@ -13,7 +13,8 @@ pub struct Scanner {
     pub path: String,
     pub config: config::Config,
     pub process: Command,
-    pub pipe: Child
+    pub pipe: Child,
+    pub work: bool
 }
 
 
@@ -31,7 +32,8 @@ impl Scanner {
             path: path,
             config: config,
             process: process,
-            pipe: pipe
+            pipe: pipe,
+            work: true
         }
     }
 
@@ -159,6 +161,10 @@ impl Scanner {
 
     /// Send request (message is bytes and encode base64 here)
     pub fn request_by_bytes(&mut self, message: &[u8]) -> Result<String, String> {
+        if !self.work {
+            return Ok("".to_string());
+        }
+
         // encode to base64
         let string_message: String = String::from_utf8(message.to_vec()).unwrap();
         let base64_message = base64::encode(&string_message.to_string());
@@ -169,6 +175,15 @@ impl Scanner {
     /// Send empty line and received result
     pub fn request_end(&mut self) -> Result<String, String> {
         let result = self.request("\n".to_string());
+        self.kill();
+        return result;
+    }
+
+    /// Kill the process
+    /// make work-flag false
+    pub fn kill(&mut self) {
+        self.work = false;
+
         match self.pipe.kill() {
             Ok(_) => {},
             Err(_err) => {
@@ -177,7 +192,6 @@ impl Scanner {
                     {}", _err);
             }
         }
-        return result;
     }
 }
 
@@ -185,6 +199,8 @@ impl Scanner {
 impl Drop for Scanner {
     /// when scope out, kill process
     fn drop(&mut self) {
+        self.work = false;
+
         match self.pipe.kill() {
             Ok(_) => {},
             Err(_err) => {

@@ -3,16 +3,11 @@ extern crate config;
 extern crate serde_json;
 
 
-/// State for scanner hit
-pub enum IsHit {
-    Err,
-    Hit,
-    Unhit
-}
 
 /// Result for Scannig
 pub struct ScanResult {
-    pub result: IsHit,
+    pub hit: bool,
+    pub success: bool,
     pub messages: Vec<String>
 }
 
@@ -20,27 +15,23 @@ impl ScanResult {
     /// Build new scan-result
     pub fn new() -> ScanResult {
         ScanResult {
-            result: IsHit::Unhit,
+            hit: false,
+            success: true,
             messages: Vec::new()
         }
     }
 
     /// Init new scanner by arguments
-    pub fn init(is_hit: IsHit, messages: Vec<String>) -> ScanResult {
+    pub fn init(_hit: bool, success: bool, messages: Vec<String>) -> ScanResult {
         ScanResult {
-            result: is_hit,
+            hit: _hit,
+            success: true,
             messages: messages
         }
     }
 
     /// Return json formated result
     pub fn to_string(&self) -> String {
-        let is_hit = match self.result{
-            IsHit::Err => "err",
-            IsHit::Hit => "hit",
-            IsHit::Unhit => "unhit"
-        };
-
         let mut encoded_messages: Vec<String> = Vec::new();
 
         for message in &self.messages {
@@ -49,11 +40,18 @@ impl ScanResult {
         }
         
         let result = format!("{{\
-                \"result\":\"{}\",\
+                \"hit\":{},\
+                \"sucess\":{},\
                 \"message\":{:?}\
-            }}", is_hit, encoded_messages);
+            }}", self.hit, self.success, encoded_messages);
         
         return result;
+    }
+
+    /// Add results and 
+    pub fn add(&mut self, result: &mut  ScanResult) {
+        self.hit = self.hit || result.hit;
+        self.messages.append(&mut result.messages);
     }
 }
 

@@ -46,11 +46,12 @@ fn search_files(files_paths: &mut Vec<PathBuf>, directory_path: PathBuf) {
     }
 }
 
-/// Using signatures and scanner to scan target.
-pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
+
+/// Search scanner list,
+/// and return them built.
+fn build_scanners(target: ScanTarget) -> Result<Vec<Scanner>, String> {
     /* Get scanner */
     let mut scanners: Vec<Scanner> = Vec::new();
-    let mut scan_result = ScanResult::new();
 
     // get current directory
     let unwraped_current_path = env::current_dir().unwrap();
@@ -139,13 +140,29 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
         scanners.push(scanner);
     }
 
+    return Ok(scanners);
+}
+
+/// Using signatures and scanner to scan target.
+pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
+    let mut scan_result = ScanResult::new();
+
+    // get scanner list
+    let mut scanners = match build_scanners(target) {
+        Ok(_scanner) => _scanner,
+        Err(_err) => {
+            println!("{}", _err);
+            return Err(_err);
+        }
+    };
+
     // get signature list
     let signature_path = PathBuf::from("./signature");
     let mut signatures: Vec<PathBuf> = Vec::new();
     
     search_files(&mut signatures, signature_path);
 
-    for path in signatures {
+    for path in &mut signatures {
         // get extention
         let extention = path.extension().unwrap().to_str().unwrap();
 
@@ -173,9 +190,6 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
             }
         }
 
-        // for removing scanner which failed
-        let mut removes: Vec<usize> = Vec::new();
-        let count = 0;
         
         // set signatures
         for scanner in &mut scanners {
@@ -186,7 +200,7 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
                     println!("[Unexpected Err] Read Extension Err\n\
                         Please check the {} extension exits.\n\n\
                         {}", scanner.name, _err);
-                    removes.push(count);
+                    scanner.kill();
                     continue;
                 }
             };
@@ -202,8 +216,8 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
                         Ok(_) => {
                         },
                         Err(_err) => {
-                            removes.push(count);
                             print!("{}", _err);
+                            scanner.kill();
                         }
                     }
 
@@ -211,15 +225,77 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
                 }
             }
         }
-
-        // remove failed scanner
-        for remove in removes {
-            let mut scanner = scanners.remove(remove);
-            scanner.request_end().ok();
-        }
     }
 
-    scan_result.messages.push("hello world".to_string());
+    /* Get Result From Scanner */
+    for scanner in &mut scanners {
+        // get result
+        let result = match scanner.request_end() {
+            Ok(_result) => _result,
+            Err(_err) => {
+                println!("{}", _err);
+                scanner.kill();
+                continue;
+            }
+        };
+
+        // kill process
+        scanner.kill();
+
+        // parse json
+        let result: serde_json::value::Value = match serde_json::from_str(&result) {
+            Ok(_result) => _result,
+            Err(_err) => {
+                println!("[Unexpected Err] Read Result Err\n\
+                    Please check the {}'s output correct.\n\n\
+                    {}", scanner.name, _err);
+                continue;
+            }
+        };
+
+        // get hit
+        let hit = match result["hit"].as_bool() {
+            Some(_hit) => _hit,
+            None => {
+                println!("[Unexpected Err] Scanner Result Err\n\
+                    Please check the {}'s output correct.\n\n",
+                    scanner.name);
+                continue;
+            }
+        };
+
+        // get message
+        let value_messages = match result["messages"].as_array() {
+            Some(_messages) => _messages,
+            None => {
+                println!("[Unexpected Err] Scanner Result Err\n\
+                    Please check the {}'s output correct.\n\n",
+                    scanner.name);
+                continue;
+            }
+        };
+
+        // convert value to string
+        let mut messages = Vec::new();
+
+        for value in value_messages {
+            let value = match value.as_str() {
+                Some(_messages) => _messages,
+                None => {
+                    println!("[Unexpected Err] Scanner Result Err\n\
+                        Please check the {}'s output correct.\n\n",
+                        scanner.name);
+                    continue;
+                }
+            };
+
+            messages.push(value.to_string());
+        }
+
+        // return result
+        let mut result = ScanResult::init(hit, true, messages);
+        scan_result.add(&mut result);
+    }
 
     return Ok(
         scan_result

@@ -31,7 +31,8 @@ fn serv(req: &mut Request) -> IronResult<Response> {
             messages.push("empty".to_string());
             
             let result = scan_utils::ScanResult::init(
-                scan_utils::IsHit::Err,
+                false,
+                true,
                 messages
             );
 
@@ -41,7 +42,8 @@ fn serv(req: &mut Request) -> IronResult<Response> {
             messages.push("incorrect json format".to_string());
 
             let result = scan_utils::ScanResult::init(
-                scan_utils::IsHit::Err,
+                false,
+                true,
                 messages
             );
 
@@ -56,7 +58,8 @@ fn serv(req: &mut Request) -> IronResult<Response> {
             messages.push("empty".to_string());
 
             let result = scan_utils::ScanResult::init(
-                scan_utils::IsHit::Err,
+                false,
+                true,
                 messages
             );
 
@@ -71,7 +74,8 @@ fn serv(req: &mut Request) -> IronResult<Response> {
             messages.push("unexpected err".to_string());
             
             let result = scan_utils::ScanResult::init(
-                scan_utils::IsHit::Err,
+                false,
+                true,
                 messages
             );
 
