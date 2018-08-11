@@ -23,20 +23,26 @@ fn serv(req: &mut Request) -> IronResult<Response> {
     let param = req.get::<bodyparser::Json>();
 
     // parse parameter to json
+    let mut messages: Vec<String> = Vec::new();
+
     let param = match param {
         Ok(Some(_param)) => _param,
         Ok(None) => {
+            messages.push("empty".to_string());
+            
             let result = scan_utils::ScanResult::init(
                 scan_utils::IsHit::Err,
-                "empty".to_string()
+                messages
             );
 
             return Ok(Response::with((status::Ok, result.to_string())));
         },
         Err(_err) => {
+            messages.push("incorrect json format".to_string());
+
             let result = scan_utils::ScanResult::init(
                 scan_utils::IsHit::Err,
-                "incorrect json format".to_string()
+                messages
             );
 
             return Ok(Response::with((status::Ok, result.to_string())));
@@ -47,9 +53,11 @@ fn serv(req: &mut Request) -> IronResult<Response> {
     let target = match scan_utils::ScanTarget::new(param) {
         Ok(_target) => _target,
         Err(_) => {
+            messages.push("empty".to_string());
+
             let result = scan_utils::ScanResult::init(
                 scan_utils::IsHit::Err,
-                "target not found".to_string()
+                messages
             );
 
             return Ok(Response::with((status::Ok, result.to_string())));
@@ -59,9 +67,15 @@ fn serv(req: &mut Request) -> IronResult<Response> {
     // scan
     let result = match scan::scan(target) {
         Ok(_result) => _result,
-        Err(_err) => scan_utils::ScanResult{
-            result: scan_utils::IsHit::Err,
-            message: "unexpected err".to_string()
+        Err(_err) => {
+            messages.push("unexpected err".to_string());
+            
+            let result = scan_utils::ScanResult::init(
+                scan_utils::IsHit::Err,
+                messages
+            );
+
+            result
         }
     };
 
