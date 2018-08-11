@@ -227,6 +227,59 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
         }
     }
 
+    /* Get Result From Scanner */
+    for scanner in &mut scanners {
+        // get result
+        let result = match scanner.request_end() {
+            Ok(_result) => _result,
+            Err(_err) => {
+                println!("{}", _err);
+                scanner.kill();
+                continue;
+            }
+        };
+
+        // kill process
+        scanner.kill();
+
+        // parse json
+        let result: serde_json::value::Value = match serde_json::from_str(&result) {
+            Ok(_result) => _result,
+            Err(_err) => {
+                println!("[Unexpected Err] Read Result Err\n\
+                    Please check the {}'s output correct.\n\n\
+                    {}", scanner.name, _err);
+                continue;
+            }
+        };
+
+        // get hit
+        let hit = match result["hit"].as_bool() {
+            Some(_hit) => _hit,
+            None => {
+                println!("[Unexpected Err] Scanner Result Err\n\
+                    Please check the {}'s output correct.\n\n",
+                    scanner.name);
+                continue;
+            }
+        };
+
+        // get message
+        let messages = match result["messages"].as_array() {
+            Some(_messages) => _messages,
+            None => {
+                println!("[Unexpected Err] Scanner Result Err\n\
+                    Please check the {}'s output correct.\n\n",
+                    scanner.name);
+                continue;
+            }
+        };
+
+        println!("hit:{}\nmessage:{:?}", hit, messages);
+    
+    }
+
+
     scan_result.messages.push("hello world".to_string());
 
     return Ok(
