@@ -265,7 +265,7 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
         };
 
         // get message
-        let messages = match result["messages"].as_array() {
+        let value_messages = match result["messages"].as_array() {
             Some(_messages) => _messages,
             None => {
                 println!("[Unexpected Err] Scanner Result Err\n\
@@ -275,12 +275,27 @@ pub fn scan(target: ScanTarget) -> Result<ScanResult, String> {
             }
         };
 
-        println!("hit:{}\nmessage:{:?}", hit, messages);
-    
+        // convert value to string
+        let mut messages = Vec::new();
+
+        for value in value_messages {
+            let value = match value.as_str() {
+                Some(_messages) => _messages,
+                None => {
+                    println!("[Unexpected Err] Scanner Result Err\n\
+                        Please check the {}'s output correct.\n\n",
+                        scanner.name);
+                    continue;
+                }
+            };
+
+            messages.push(value.to_string());
+        }
+
+        // return result
+        let mut result = ScanResult::init(hit, true, messages);
+        scan_result.add(&mut result);
     }
-
-
-    scan_result.messages.push("hello world".to_string());
 
     return Ok(
         scan_result
