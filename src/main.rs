@@ -14,6 +14,7 @@ use hyper_native_tls::NativeTlsServer;
 mod scanner;
 mod scan_utils;
 mod scan;
+mod git;
 
 
 /// If the server get requests, 
@@ -144,6 +145,8 @@ fn main() {
         }
     };
     
+    git::auto_pull();
+
     /* run server */
     println!("On {}", address);
     
