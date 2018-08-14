@@ -41,8 +41,8 @@ impl ScanResult {
         
         let result = format!("{{\
                 \"hit\":{},\
-                \"sucess\":{},\
-                \"message\":{:?}\
+                \"success\":{},\
+                \"messages\":{:?}\
             }}", self.hit, self.success, encoded_messages);
         
         return result;
