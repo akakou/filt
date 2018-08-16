@@ -22,6 +22,8 @@ mod git;
 fn serv(req: &mut Request) -> IronResult<Response> {
     // get request's parameter
     let param = req.get::<bodyparser::Json>();
+    println!("{:?}", param);
+
 
     // parse parameter to json
     let mut messages: Vec<String> = Vec::new();
@@ -56,11 +58,11 @@ fn serv(req: &mut Request) -> IronResult<Response> {
     let target = match scan_utils::ScanTarget::new(param) {
         Ok(_target) => _target,
         Err(_) => {
-            messages.push("empty".to_string());
+            messages.push("err".to_string());
 
             let result = scan_utils::ScanResult::init(
                 false,
-                true,
+                false,
                 messages
             );
 
@@ -145,7 +147,7 @@ fn main() {
         }
     };
     
-    git::auto_pull();
+    //git::auto_pull();
 
     /* run server */
     println!("On {}", address);
